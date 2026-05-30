@@ -1,0 +1,5 @@
+Method,Best Val Acc (%)
+Full (Norm+Aug),96.51
+No Norm,97.67
+No Aug,96.51
+No Norm & No Aug,97.29

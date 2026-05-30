@@ -1,0 +1,3 @@
+Method,Train N,Val N,Best Val Acc (%)
+No Flip (Baseline),1124,258,96.51
+With Offline Flip,2506,258,97.29

@@ -1,0 +1,70 @@
+# ── 大型資料（絕對不推）────────────────────────────────
+checkpoints/
+data_original/
+data/
+wandb/
+logs/
+outputs/
+
+# ── 借用的第三方程式碼 ────────────────────────────────
+NTU/
+
+# ── ONNX / 模型權重 ───────────────────────────────────
+models/
+*.onnx
+*.onnx.data
+*.pth
+*.pt
+
+# ── ISP 子專案（已有獨立 repo）────────────────────────
+isp_pipeline/
+
+# ── 論文私人文字稿 ─────────────────────────────────────
+thesis_materials/senior_thesis_text.txt
+thesis_materials/senior_thesis_text_original.txt
+thesis_materials/developer_diary.md
+thesis_materials/ppt_text.txt
+thesis_materials/thesis_presentation_script.md
+thesis_materials/thesis_draft_outline.md
+thesis_materials/master_thesis_roadmap.md
+thesis_materials/literature_review_slides.md
+
+# ── Python 快取 ───────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+
+# ── Jupyter ───────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── IDE ───────────────────────────────────────────────
+.vscode/
+.idea/
+
+# ── 系統檔 ────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── 本地設定 ──────────────────────────────────────────
+*.env
+.env
+
+# ── 根目錄雜亂檔案（thesis_materials/ 已有整理版）────
+/*.csv
+/*.png
+/*.db
+/*.html
+/arch_report.txt
+/eval_robust.py
+/extract_original_ch2.py
+/generate_full_thesis.py
+/generate_full_thesis_backup.py
+/verify_events.py
+/literature_review_slides.md
+/master_thesis_roadmap.md
+/thesis_presentation_script.md

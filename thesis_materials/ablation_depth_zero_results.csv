@@ -1,0 +1,6 @@
+Config,Spatial,Temporal,Best Val Acc (%)
+S=1 T=1,1,1,96.12
+S=1 T=2,1,2,96.90
+S=2 T=1,2,1,96.90
+S=2 T=2,2,2,96.51
+S=3 T=4,3,4,96.51

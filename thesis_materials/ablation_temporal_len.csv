@@ -1,0 +1,4 @@
+Sequence Length (T),Val Accuracy (%)
+T=32,98.45
+T=64 (Baseline),97.67
+T=128,98.45

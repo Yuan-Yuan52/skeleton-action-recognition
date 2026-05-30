@@ -1,0 +1,616 @@
+
+--- Slide 1 ---
+  
+研究生：顏慶源
+指導教授：林晃巖 教授
+國立台灣大學光電工程學研究所
+NTU OE DISPLAY OPTICS LAB
+進度報告
+
+--- Slide 2 ---
+研究動機
+NSDB
+文獻回顧
+實驗流程
+(Data flow)
+模型設計與訓練
+(Transformer)
+模型驗證結果
+實驗結果
+結論
+Outline
+
+--- Slide 3 ---
+NTU OE DISPLAY OPTICS LAB
+研究動機
+
+--- Slide 4 ---
+人工物料搬運
+:
+從事重複的抬舉、搬運、推拉等動作，容易產生肌肉骨骼傷病。
+根據統計
+[1]
+，台灣職業病中，肌肉骨骼傷病佔比高達
+60%
+，其中上肢和下背各佔
+45%
+。
+[1]
+勞動部勞動及職業安全衛生研究所
+(2018)
+。「職業性肌肉骨骼傷病防治之健康管理模式探討研究」。
+舊有物流業骨骼傷病風險評估方法
+方法
+說明
+問卷訪談和
+自主回饋報告
+操作簡單
+能收集大量有代表性的樣本資料
+基於檢核表的
+現場觀察法
+能獲得具人因領域專家所認可的評估結果
+使用監控儀器進行量測的直接測量法
+能透過測量技術瞭解作業者在實際工作環境中的動態表現
+能
+測量工作時的動作特徵與肌肉電活動等
+缺點：耗時、費力、影響工作表現
+研究背景
+圖一、物流業下貨區域攝影機畫面
+
+--- Slide 5 ---
+結論：
+開發一套結合觀察法中的量表評估的下背傷病風險偵測系統，資料的輸入來源為物流業常見之
+RTSP
+網路攝影機，藉此降低安裝系統之成本；利用此系統可準確預測和分析工作人員的姿勢變化及其潛在風險。
+評估方法解釋
+分數小 
+ 
+無健康疑慮 
+分數大 
+ 
+工作過程當中對身體結構負擔大 
+
+ 重新設計工作流程
+圖二、
+KIM-LHC
+評估量表身體姿勢說明
+圖三、
+KIM-LHC
+風險等級說明
+
+--- Slide 6 ---
+結論：
+開發一套結合觀察法中的量表評估的
+下背傷病風險偵測系統
+，資料的輸入來源為物流業常見之
+RTSP
+網路攝影機，藉此降低安裝系統之成本；利用此系統可準確預測和分析工作人員的姿勢變化及其潛在風險。
+分數小 
+ 
+無健康疑慮 
+分數大 
+ 
+工作過程當中對身體結構負擔大 
+
+ 重新設計工作流程
+圖二、
+KIM-LHC
+評估量表身體姿勢說明
+圖三、
+KIM-LHC
+風險等級說明
+評估方法解釋
+
+--- Slide 7 ---
+NTU OE DISPLAY OPTICS LAB
+文獻回顧
+
+--- Slide 8 ---
+[1] A Lower Back Injury Risk Assessment and Monitoring System Based on AI Image Recognition-Yuan-Wei Su
+基於
+AI
+影像辨識的下背傷病風險評估與監測系統
+圖四、
+YOLO-Pose+STGCN
+的系統架構
+[1]
+圖五、
+YOLO-Pose+STGCN
+的輸出結果
+[1]
+該研究建立了一套完整的風險評估系統，將
+RTSP
+網路攝影機的輸入影像，藉由
+YOLO-Pose
+得到各關節點位，並將此資訊放入
+ST-GCN
+的動作辨識模組，將動作分類成三種不同的類別
+(Pick up 
+、
+Put down 
+、 
+Non)
+並結合查表法得出各動作對應的姿勢並輸出風險評分。
+
+--- Slide 9 ---
+[1] A Lower Back Injury Risk Assessment and Monitoring System Based on AI Image Recognition-Yuan-Wei Su
+[2]
+勞動部勞動及職業安全衛生研究所計畫研究報告
+(2025)
+，「應用影像偵測技術評估抬舉作業時下背傷病風險研究」，
+ISBN: 978-626-7743-19-5
+現有方法
+圖六、
+ST-GCN
+動作辨識架構圖
+[1]
+Input video
+ 
+:
+ 
+8FPS		Input 
+keypoints
+：
+17 joints
+Accuracy 
+ 
+: 86.61%	Recall
+： 
+92.56%
+Specificity
+ 
+:
+　
+78.31 %
+訓練集來源
+:
+自行拍攝之
+15
+部影片共計
+770,831
+幀
+圖七、
+ST-GCN
+動作辨識結果之混淆矩陣
+[2]
+
+--- Slide 10 ---
+1.
+動作辨識的時間解析度不足
+2.
+非搬運狀態的辨識能離薄弱
+3.
+分類細節度不足
+4.
+軀幹扭轉未納入討論
+現有方法的限制
+限制
+說明
+解法
+時間解析度不足
+8 FPS, T=16 (
+覆蓋 
+2 
+秒
+)
+搬運動作（彎腰→抓取→起身）的完整週期通常需要 
+3~5 
+秒，
+2 
+秒的視窗無法涵蓋完整動作
+調整模型使用，並輕量化運算
+STG-CN > Transformer
+30 FPS, T=64 (
+覆蓋 
+4.3 
+秒
+)
+Specificity 
+過低
+(78.31%)
+Non
+狀態的辨識度較弱
+20% 
+的非搬運行為被誤判為搬運
+1.
+增加
+Non
+樣本數
+2.
+使用
+class5
+分類模型判定動作
+分類細節不足
+(3 class)
+查表法僅觀察動作區間內始末的變化，以便區分動作但此方法辨識精度不足
+class5
+分類模型
+缺少扭轉評估
+KIM-LHC 
+的完整評估中，扭轉是重要的風險因子
+計算肩寬線與髖寬線的夾角
+並以
+20
+度為有效扭轉門檻
+
+--- Slide 11 ---
+NTU OE DISPLAY OPTICS LAB
+NSDB
+
+--- Slide 12 ---
+Need
+：
+Solution
+：
+Differential
+：
+Benefit
+：
+模型輕量化
+(input 
+keyponts
+ 17 >13 )
+，加入
+attention 
+機制同時考量
+13
+個關節點位及
+64
+偵輸入影像間的相互關係，並導入
+Center-Scale Normalization 
+解決攝影機變形問題
+基於
+AI
+影像辨識
+3D
+骨架下背傷病風險評估與監測系統
+(
+即時性、扭轉加分項
+)
+利用
+Mediapipe
+ Pose (3D 
+skelton
+)
+蒐集骨架資訊，並利用
+RTSP
+串流攝影機與監測主機，並使用
+Spatio
+ 
+temporal Transformer model 
+Accuracy 86.61%
+  
+>>
+ 
+95.62%
+ 
+(99.64%)
+Recall  
+ 
+92.56%
+  
+>>
+ 
+94.95%
+ 
+(99.63%)
+Specificity 78.31%
+ 
+>>
+ 
+100%
+ 
+(100%)
+
+--- Slide 13 ---
+NTU OE DISPLAY OPTICS LAB
+資料流程
+
+--- Slide 14 ---
+Rtsp1
+Rtsp2
+運動角度測量
+骨架偵測
+動作偵測
+(start/end)
+Pytorch
+ > 
+onxx
+SQL
+ 資料庫系統
+0
+ 
+>>
+non_in_event
+1
+ 
+>> 
+桌面高度搬運
+2
+ 
+>>
+ 椅面高度搬運
+3
+ 
+>>
+ 屈膝搬運
+4 >>
+ 直膝彎腰搬運
+系統
+pipeline
+模型訓練
+資料標註
+
+--- Slide 15 ---
+NTU OE DISPLAY OPTICS LAB
+模型設計與訓練
+
+--- Slide 16 ---
+資料集數量
+(
+重新
+label)
+種類
+數量
+class 0
+490
+組
+class1
+221
+組
+class2
+220
+組
+class3
+219
+組
+class4
+218
+組
+Overall
+1368
+組 
+/ 30
+人
+
+--- Slide 17 ---
+Spatial-Temporal Transformer
+MediaPipe
+ Pose
+T frame
+(T_orig,33,3)
+Spatial Positional Encoding
+Input
+Spatial Encoder 3 Layer
+(2048,13,256)
+Multi-Head Attention
+Add & Norm
+Feed Forward
+Add & Norm
+Joint Embedding 
+(2048,13,256)
+(32,64,13,256)
+
+--- Slide 18 ---
+Temporal Encoder 4 Layer
+Multi-Head Attention
+Add & Norm
+Feed Forward
+Add & Norm
+Spatial Encoder 
+Spatial Projection
+Temporal Positional Encoding
+Input
+(32,64,256)
+(2048,13,256)
+MLP
+(32,5)
+Output
+Global Average Pooling
+(32,256)
+(32,64,256)
+Spatial-Temporal Transformer
+
+--- Slide 19 ---
+NTU OE DISPLAY OPTICS LAB
+模型驗證結果
+
+--- Slide 20 ---
+訓練過程
+
+--- Slide 21 ---
+T-
+sne
+的比較
+Untrained 
+-0.0188
+Robust-Transformer
+0.7084
+
+--- Slide 22 ---
+T-
+sne
+的比較
+Class5 ST-GCN 
+0.4817
+Robust Transformer
+0.7084
+RNN-GRU
+0.1871
+
+--- Slide 23 ---
+Confusion
+ 
+Matrix 
+比較
+
+--- Slide 24 ---
+ST-GCN[1]
+Class5-ST-GCN
+Robust Transformer
+分類數 
+(
+Classes)
+3
+5
+5
+輸入關節數 
+(
+V)
+17 (COCO)
+17 (COCO)
+13 (
+核心，輕量化
+)
+時間視窗 
+(
+T)
+16 (8 FPS)
+64 (30 FPS)
+64 (30 FPS)
+模型架構深度
+9 ST-GCN Blocks
+9 ST-GCN Blocks
+Spatial×3 + Temporal×4 Blocks
+可學習層數
+23 
+層
+23 
+層
+25 
+層
+總參數量
+3,074,055 (~3.07M)
+3,074,569 (~3.07M)
+6,451,205 (~6.45M)
+模型大小 
+(
+MB)
+11.75 MB
+11.76 MB
+24.61 MB
+單次推論延遲
+3.75 ms
+6.79 ms
+9.04 
+ms
+模型極限 
+FPS (CPU)
+266.8 FPS
+147.4 FPS
+110.6 FPS
+
+--- Slide 25 ---
+架構組合 
+前端骨架耗時
+後端動作耗時
+總耗時
+可運行之
+FPS
+YOLO + ST-GCN
+[1]
+124.1 
+ms
+6.75 
+ms
+130.8 ms
+9.54
+ FPS
+YOLO + Transformer
+124.1 
+ms
+8.89 
+ms
+133.0 
+ms
+9.54
+FPS
+MediaPipe
+ + ST-GCN
+5.98 ms
+6.75 
+ms
+12.7 
+ms
+78.5 FPS
+MediaPipe
+ + Transformer
+5.98 ms
+8.89 ms
+14.8 
+ms
+67.2 FPS
+
+--- Slide 26 ---
+結果
+
+--- Slide 27 ---
+NTU OE DISPLAY OPTICS LAB
+結論
+
+--- Slide 28 ---
+準確度提升
+：在公平比較下將 
+Accuracy 
+從 
+86.61% 
+提升至 
+99.64%
+，提升
+13.03%
+，並解決 
+class 
+0
+ 
+被誤判的問題 
+(Specificity 
+達到 
+100%)
+。
+精細度提升
+：成功將動作擴展分類為 
+5 
+類，並加入了 
+3D 
+空間中的軀幹扭轉判定。
+（
+T-
+sne
+圖分數提升）
+3.
+即時性
+實務應用
+：原先
+YOLO-Pose + ST-GCN
+僅能負擔
+8 FPS 
+的即時偵測
+，現架購可提升至
+30 FPS (
+提升
+275%)
+ 
+
+--- Slide 29 ---
+NTU OE DISPLAY OPTICS LAB
+要補的內容
+
+--- Slide 30 ---
+1.YOLO-Pose 
+和 
+Mediapipe
+ Pose 
+的文獻回顧
+2.Spatical 
+temporial
+ transformer 
+的文獻回顧
+3.Center-Scale Normalization 
+的文獻回顧
+4.
+腰部扭轉的實例驗證
+5.
+實例影片的動作變化對比於模型偵測
+(STG-CN
+ 
+/ Transformer)
