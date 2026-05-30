@@ -1,239 +1,239 @@
-# 即時下背傷病風險監測系統
+# Real-Time Lower Back Injury Risk Monitoring System
 
-**國立臺灣大學 碩士論文 — 2026 年 6 月**
+**Master's Thesis — National Taiwan University, June 2026**
 
-基於 3D 骨架與時空 Transformer 的非接觸式即時監測系統，偵測人工物料搬運（MMH）作業中的下背傷病風險。系統透過 RTSP 串流接入現有工業攝影機，符合中華民國職業安全衛生法及 KIM-LHC 人因評估標準。
-
----
-
-## 核心成果
-
-| 指標 | 數值 |
-|:-----|:----:|
-| 5 分類驗證準確率 | **97.67%** |
-| 特徵空間輪廓係數（Silhouette Score）| **0.7339** |
-| 背景動作（Class 0）特異度 | **100%** |
-| 端到端處理幀率（純 CPU，無 GPU）| **85.3 FPS** |
-| 模型參數量 / 大小 | **4.08M / 15.57 MB** |
-| 高斯噪聲抗擾（σ=0.1）| **98.06%** |
-| 2 關節遮擋抗擾 | **96.12%** |
+A contactless, real-time system for detecting lower back injury risk during manual material handling (MMH), using 3D skeleton extraction and a Spatio-Temporal Transformer. Compatible with standard IP cameras via RTSP streaming. Compliant with Taiwan's Occupational Safety and Health Act and KIM-LHC ergonomic assessment standards.
 
 ---
 
-## 系統架構
+## Key Results
+
+| Metric | Value |
+|:-------|:-----:|
+| 5-class validation accuracy | **97.67%** |
+| Feature space Silhouette Score | **0.7339** |
+| Background (Class 0) Specificity | **100%** |
+| End-to-end FPS (CPU only, no GPU) | **85.3 FPS** |
+| Model parameters / size | **4.08M / 15.57 MB** |
+| Robustness under Gaussian noise σ=0.1 | **98.06%** |
+| Robustness under 2-joint occlusion | **96.12%** |
+
+---
+
+## System Pipeline
 
 ```
-RTSP 攝影機串流
+RTSP Camera Stream
       │
       ▼
-MediaPipe Pose（5.98 ms/幀）
-   33 關節 → 13 核心關節
+MediaPipe Pose  (5.98 ms/frame)
+   33 joints → 13 core joints
       │
       ▼
-時空雙通道 Transformer（5.71 ms/次）
-   S=2 空間層 + T=2 時間層
-   關閉 CS-Normalization ← 保留絕對高度特徵
+Spatio-Temporal Transformer  (5.71 ms/inference)
+   S=2 Spatial Layers + T=2 Temporal Layers
+   No CS-Normalization  ← preserves absolute height features
       │
-      ├─► 5 類搬運動作辨識
-      ├─► 軀幹扭轉角判定（肩髖投影夾角，閾值 20°）
-      └─► 雙層狀態機 + EMA 機率平滑
+      ├─► 5-class action recognition
+      ├─► Trunk twisting angle (shoulder-hip projection, ≥20°)
+      └─► Dual-layer state machine + EMA smoothing
               │
               ▼
-        SQLite 事件記錄 + 即時 GUI 警示
+        SQLite event log + real-time GUI alert
 ```
 
-**5 分類動作（對應 KIM-LHC 評估）：**
+**5 Action Classes (KIM-LHC aligned):**
 
-| 類別 | 動作名稱 | 風險等級 |
-|:---:|:--------|:------:|
-| 0 | 背景／非搬運動作 | — |
-| 1 | 桌面高度蹲舉 | 低 |
-| 2 | 髖鉸鏈搬運 | 中 |
-| 3 | 屈膝非對稱搬運 | 中 |
-| 4 | **直膝彎腰搬運** | **高 ⚠️** |
-
----
-
-## 分類性能
-
-**最佳模型混淆矩陣（S=2, T=2 ｜ 關閉正規化 ｜ Fair-Flip ｜ 驗證準確率 97.67%）：**
-
-![混淆矩陣](thesis_materials/confusion_matrix_best_model_zero.png)
-
-- Class 0（背景）：**99% Recall**，誤報率為零
-- Class 1（蹲舉）：**100% Recall**
-- Class 3 vs Class 4（安全 vs 危險）：正確區分率極高
+| Class | Name | Risk Level |
+|:-----:|:-----|:----------:|
+| 0 | Other (background activity) | — |
+| 1 | Squat lift (table height) | Low |
+| 2 | Hip-Hinge (chair height) | Medium |
+| 3 | Asymmetric lift (bent-knee) | Medium |
+| 4 | **Upright bend (straight-knee)** | **High ⚠️** |
 
 ---
 
-## 特徵空間品質（t-SNE 視覺化）
+## Classification Performance
 
-未訓練模型（隨機權重）vs 訓練完成的時空 Transformer：
+**Best model confusion matrix (S=2, T=2 | No-Norm | Fair-Flip | Val Acc = 97.67%):**
 
-![t-SNE 對比](thesis_materials/tsne_comparison_zero.png)
+![Confusion Matrix](thesis_materials/confusion_matrix_best_model_zero.png)
 
-輪廓係數從 **-0.0057 → 0.7339**，5 類動作特徵群呈現清晰邊界與高度凝聚性。
-
----
-
-## 核心貢獻：關閉 CS-Normalization 策略
-
-傳統骨架動作辨識普遍使用 Center-Scale Normalization（CS-Norm）消除相機視角差異。本研究發現，CS-Norm 會**抹除絕對高度特徵**——而這正是區分背景日常動作（Class 0）與搬運動作的關鍵物理資訊。
-
-**方法消融實驗：**
-
-![方法消融](thesis_materials/confusion_matrix_method_ablation_zero.png)
-
-| 方法 | 驗證準確率 | 輪廓係數 | Class 0 Recall |
-|:-----|:--------:|:-------:|:--------------:|
-| 完整（CS-Norm + 增強）| 96.51% | — | 0.98 |
-| 無增強 | 96.51% | — | 0.98 |
-| **關閉 Norm + 增強（本研究）** | **97.67%** | **0.7339** | **1.00** |
-
-補償方案：在線隨機旋轉 + 離線水平翻轉（Fair Flip），訓練集從 1,124 擴增至 2,506 筆。
+- Class 0 (background): **99% Recall** — near-zero false alarm rate
+- Class 1 (Squat): **100% Recall**
+- Class 3 vs Class 4 (safe vs. dangerous): correctly distinguished
 
 ---
 
-## 空間自注意力可解釋性分析
+## Feature Space Quality (t-SNE)
 
-模型在**無任何解剖學監督**的情況下，自主學習到具有生物力學意義的關節互動模式：
+Untrained model (random weights) vs. trained ST-Transformer:
 
-![注意力差異熱圖](thesis_materials/attention_class3_vs_class4_diff.png)
+![t-SNE Comparison](thesis_materials/tsne_comparison_zero.png)
 
-- **Class 4（直膝彎腰，最高風險）** → 高 **膝關節 ↔ 踝關節** 注意力 — 精確對應 KIM-LHC「直膝起吊」最大 L5/S1 剪力危害指標
-- **Class 3（屈膝安全搬運）** → 高 **肩膀 ← 鼻子** 注意力 — 捕捉非對稱搬運的軀幹旋轉特徵
-
-**各類別前五名最強關節注意力對：**
-
-![Top 注意力對](thesis_materials/attention_top_pairs_per_class.png)
+Silhouette Score improves from **-0.0057 → 0.7339**, demonstrating clear cluster boundaries for all 5 action classes.
 
 ---
 
-## 系統魯棒性分析
+## Core Contribution: No-CS-Normalization Strategy
 
-模型在各種真實場景干擾下仍維持高準確率：
+Traditional skeleton action recognition applies Center-Scale Normalization (CS-Norm) to remove camera-position variance. We found that CS-Norm **destroys the absolute height features** critical for distinguishing background movements (Class 0) from lifting actions.
 
-![魯棒性分析](thesis_materials/robustness_comparison.png)
+**Ablation study — effect of normalization and augmentation:**
 
-| 干擾條件 | 本研究 | GRU-33J | ST-GCN |
-|:--------|:------:|:-------:|:------:|
-| 無干擾 | **97.67%** | 96.51% | 96.51% |
-| 高斯噪聲 σ=0.1 | **98.06%** | 94.19% | 96.51% |
-| 隨機遮擋 2 關節 | **96.12%** | 65.50% | 71.32% |
-| 隨機遮擋 5 關節 | **75.97%** | 65.50% | 45.74% |
+![Method Ablation](thesis_materials/confusion_matrix_method_ablation_zero.png)
 
-自注意力機制的全局加權特性能補償缺失關節，而 ST-GCN 的固定圖拓撲導致雪崩式準確率下降。
+| Method | Val Acc | Silhouette | Class 0 Recall |
+|:-------|:-------:|:----------:|:--------------:|
+| With CS-Norm + Augmentation | 96.51% | — | 0.98 |
+| No Augmentation | 96.51% | — | 0.98 |
+| **No Norm + Augmentation (Ours)** | **97.67%** | **0.7339** | **1.00** |
 
----
-
-## 解剖注意力偏置（AAB）消融實驗
-
-本研究嘗試以骨架圖距離初始化空間注意力偏置（AAB）。結果顯示加入解剖先驗反而**降低性能**。
-
-![AAB 消融學習曲線](thesis_materials/aab_ablation_curve.png)
-
-| 設定 | 驗證準確率 | 輪廓係數 | Class 0 Recall |
-|:-----|:--------:|:-------:|:--------------:|
-| + AAB（解剖偏置）| 96.51% | 0.5813 | 0.98 |
-| **無 AAB（本研究）** | **97.67%** | **0.7339** | **1.00** |
-
-解剖偏置干擾了 No-Norm 策略所保留的絕對位置特徵，驗證了無約束自注意力優於先驗結構約束設計。
+Compensation: online random rotation + offline Fair-Flip augmentation (1,124 → 2,506 training samples).
 
 ---
 
-## 即時動作時序偵測
+## Spatial Attention Interpretability
 
-結合雙層狀態機與 EMA 平滑，系統能正確切分連續影片中的所有搬運事件：
+Our model **autonomously discovers biomechanically meaningful joint interaction patterns** without any anatomical supervision:
 
-![動作時序](thesis_materials/action_timeline_comparison.png)
+![Attention Difference Heatmap](thesis_materials/attention_class3_vs_class4_diff.png)
 
-與人工標記基準比較，**6 段搬運事件全部正確偵測，無任何幀間閃爍**。
+- **Class 4 (dangerous straight-knee bend)** → high **Knee ↔ Ankle** attention — directly corresponds to the KIM-LHC "knees straight while bending" high-risk indicator
+- **Class 3 (safe asymmetric lift)** → high **Shoulder ← Nose** attention — captures trunk rotation and asymmetric posture
 
----
+**Top-5 strongest spatial attention pairs per class:**
 
-## 軀幹扭轉角度即時判定
-
-KIM-LHC 將軀幹旋轉 ≥20° 列為高權重風險因子。系統利用肩寬向量與髖寬向量的水平投影夾角即時計算扭轉角：
-
-![軀幹扭轉](thesis_materials/twisting_validation_01_seg024.png)
+![Top Attention Pairs](thesis_materials/attention_top_pairs_per_class.png)
 
 ---
 
-## 模型比較
+## Robustness Analysis
 
-| 模型 | 輸入關節數 | 維度 | 驗證準確率 | 輪廓係數 | 推論延遲 |
-|:-----|:--------:|:----:|:---------:|:-------:|:-------:|
-| GRU Baseline（33J）| 33 | 6D | 96.51% | 0.4219 | 8.14ms |
-| GRU Baseline（13J）| 13 | 3D | 96.12% | 0.4838 | 8.22ms |
-| ST-GCN Baseline（17J）| 17 | 3D | 96.51% | 0.4634 | 6.79ms |
-| **ST-Transformer（本研究）** | **13** | **3D** | **97.67%** | **0.7339** | **5.71ms** |
+The model maintains high accuracy under real-world perturbations:
+
+![Robustness](thesis_materials/robustness_comparison.png)
+
+| Perturbation | ST-Transformer (Ours) | GRU-33J | ST-GCN |
+|:------------|:---------------------:|:-------:|:------:|
+| No noise | **97.67%** | 96.51% | 96.51% |
+| Gaussian noise σ=0.1 | **98.06%** | 94.19% | 96.51% |
+| 2 joints occluded | **96.12%** | 65.50% | 71.32% |
+| 5 joints occluded | **75.97%** | 65.50% | 45.74% |
+
+Self-attention's global weighting compensates for missing joints, while ST-GCN's fixed graph topology causes cascading accuracy collapse.
 
 ---
 
-## 程式碼結構
+## Anatomical Attention Bias (AAB) Ablation
+
+We investigated whether injecting anatomical graph-distance priors (AAB) into the spatial attention would help. Result: it **hurts** performance.
+
+![AAB Ablation Curve](thesis_materials/aab_ablation_curve.png)
+
+| Config | Val Acc | Silhouette | Class 0 Recall |
+|:-------|:-------:|:----------:|:--------------:|
+| + AAB (anatomical prior) | 96.51% | 0.5813 | 0.98 |
+| **No AAB (Ours)** | **97.67%** | **0.7339** | **1.00** |
+
+The anatomical bias interferes with the absolute position features preserved by No-Norm, validating that unconstrained self-attention discovers optimal patterns beyond anatomical topology.
+
+---
+
+## Live Action Detection Timeline
+
+Continuous event detection compared against manual annotation ground truth:
+
+![Timeline](thesis_materials/action_timeline_comparison.png)
+
+All 6 lifting events are correctly segmented with **zero prediction flicker**, using the dual-layer state machine with EMA smoothing.
+
+---
+
+## Trunk Twisting Detection
+
+KIM-LHC identifies trunk rotation ≥20° as a high-risk factor. The system computes the horizontal projection angle between shoulder and hip vectors in 3D:
+
+![Twisting](thesis_materials/twisting_validation_01_seg024.png)
+
+---
+
+## Comparison with Baselines
+
+| Model | Joints | Dims | Val Acc | Silhouette | Inference |
+|:------|:------:|:----:|:-------:|:----------:|:---------:|
+| GRU Baseline (33J) | 33 | 6D | 96.51% | 0.4219 | 8.14ms |
+| GRU Baseline (13J) | 13 | 3D | 96.12% | 0.4838 | 8.22ms |
+| ST-GCN Baseline (17J) | 17 | 3D | 96.51% | 0.4634 | 6.79ms |
+| **ST-Transformer (Ours)** | **13** | **3D** | **97.67%** | **0.7339** | **5.71ms** |
+
+---
+
+## Repository Structure
 
 ```
 src/
-├── models_transformer.py      # 時空 Transformer（S=2, T=2, d_model=256）
-├── models_transformer_aab.py  # 解剖注意力偏置消融版本
-├── train_transformer.py       # EpisodePhaseDataset + 訓練工具
-├── run_best_configs.py        # 最佳模型訓練（No-Norm + Fair-Flip）
-├── train_aab.py               # AAB 消融實驗訓練腳本
-├── visualize_attention.py     # 空間注意力權重提取與視覺化
-├── extract_skeleton.py        # MediaPipe 骨架擷取 → NPY
-├── evaluate_robustness.py     # 高斯噪聲 + 遮擋魯棒性測試
-├── kim_scoring.py             # KIM-LHC 風險評分計算
-├── benchmark_fps.py           # 端到端 FPS 基準測試
-└── utils.py                   # 訓練工具函式
+├── models_transformer.py      # ST-Transformer (S=2, T=2, d_model=256)
+├── models_transformer_aab.py  # Anatomical Attention Bias ablation variant
+├── train_transformer.py       # EpisodePhaseDataset + training utilities
+├── run_best_configs.py        # Best model training (No-Norm + Fair-Flip)
+├── train_aab.py               # AAB ablation experiment
+├── visualize_attention.py     # Spatial attention weight extraction & plots
+├── extract_skeleton.py        # MediaPipe skeleton extraction to NPY
+├── evaluate_robustness.py     # Gaussian noise + occlusion robustness tests
+├── kim_scoring.py             # KIM-LHC risk score calculator
+├── benchmark_fps.py           # End-to-end FPS benchmark
+└── utils.py                   # Training utilities
 
 thesis_materials/
 ├── deployment/
-│   ├── live_cam_onnx_sqlite.py  # 部署端：ONNX 推論 + SQLite 事件記錄
-│   └── export_to_onnx.py        # PyTorch → ONNX 匯出
-└── *.png                        # 所有實驗結果圖表
+│   ├── live_cam_onnx_sqlite.py  # Production: ONNX inference + SQLite logging
+│   └── export_to_onnx.py        # PyTorch → ONNX export
+└── *.png                        # All experimental result figures
 
 analysis/
-└── *.csv                        # 消融實驗與評估數值結果
+└── *.csv                        # Ablation and evaluation result CSVs
 ```
 
 ---
 
-## 快速開始
+## Quick Start
 
 ```bash
 pip install torch mediapipe opencv-python numpy pandas scikit-learn matplotlib seaborn onnxruntime
 
-# 即時推論（RTSP 串流、網路攝影機或影片檔）
+# Real-time inference (RTSP stream, webcam, or video file)
 python thesis_materials/deployment/live_cam_onnx_sqlite.py \
     --source 0 \
     --onnx_path path/to/model.onnx
 
-# 視覺化空間自注意力權重
+# Visualize spatial attention weights from trained model
 python src/visualize_attention.py
 
-# 執行 AAB 消融實驗（建議使用 GPU）
+# Run AAB ablation (GPU recommended)
 python src/train_aab.py
 
-# 魯棒性評估（噪聲 + 遮擋）
+# Evaluate robustness under noise and occlusion
 python src/evaluate_robustness.py
 ```
 
 ---
 
-## 技術棧
+## Tech Stack
 
 `PyTorch 2.x` · `MediaPipe` · `ONNX Runtime` · `OpenCV` · `SQLite` · `NumPy` · `scikit-learn` · `seaborn`
 
 ---
 
-## 相關專案
+## Related Project
 
-[**camera-isp-pipeline**](https://github.com/Yuan-Yuan52/camera-isp-pipeline) — 從零實作的相機 ISP 管線（Demosaicing、White Balance、CLAHE 等），用於研究影像前處理對工業現場骨架偵測品質的影響。
+[**camera-isp-pipeline**](https://github.com/Yuan-Yuan52/camera-isp-pipeline) — A companion project implementing a full camera ISP pipeline from scratch (Demosaicing, White Balance, CLAHE), studying the effect of image preprocessing on skeleton detection quality in industrial lighting conditions.
 
 ---
 
-## 作者
+## Author
 
-**顏慶源（Ching-Yuan Yen）**  
-國立臺灣大學 光電工程學研究所  
-指導教授：林晃巖博士
+**Ching-Yuan Yen (顏慶源)**  
+Graduate Institute of Photonics & Optoelectronics, National Taiwan University  
+Advisor: Prof. Hoang Yan Lin
